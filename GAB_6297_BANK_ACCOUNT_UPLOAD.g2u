@@ -1,0 +1,48 @@
+﻿Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+v.Local.sPath.Declare
+v.Local.i.Declare
+V.Local.sSql.Declare
+v.Local.sBankAcct.Declare
+v.Local.sVendor.Declare
+
+V.Local.sRet.Declare(String)
+V.Local.EncBA.Declare(ByteArray)
+V.Local.sEncrypt.Declare
+
+F.Intrinsic.UI.ShowOpenFileDialog("","Select CSV file|*",0,v.Local.spath)
+F.Intrinsic.Control.If(v.Local.spath,<>,"***CANCEL***")
+	f.ODBC.Connection!con.opencompanyconnection(60)
+	f.Data.DataTable.CreateFromCSV("dtVendors",v.Local.sPath,"String*!*String",false)
+	f.Intrinsic.Control.For(v.Local.i,0,v.DataTable.dtVendors.RowCount--,1)
+		v.Local.sBankAcct.Set(v.DataTable.dtVendors(v.Local.i).BankAccount!fieldval)
+		v.Local.sVendor.Set(v.DataTable.dtVendors(v.Local.i).Vendor!fieldval)
+		F.Global.Encryption.Encrypt(V.Local.sBankAcct,-1,0,40,V.Local.EncBA)
+		f.Intrinsic.String.ConvertBA2Hex(v.Local.EncBA,v.Local.sEncrypt)
+	
+		f.Intrinsic.String.Build("SELECT vendor_id FROM VENDOR_ENCRYPT WHERE VENDOR_ID='{0}'",v.Local.sVendor,v.Local.sSql)
+		f.ODBC.Connection!con.ExecuteAndReturn(v.Local.sSql,v.Local.sRet)
+		f.Intrinsic.Control.If(v.Local.sRet.Trim,=,"")	
+			f.Intrinsic.String.build("INSERT INTO VENDOR_ENCRYPT (VENDOR_ID, BANK_ACCT_ENC) VALUES('{0}','{1}')",v.Local.sVendor,v.Local.sEncrypt,v.Local.ssql)
+			f.ODBC.Connection!con.Execute(v.Local.sSql)
+		f.Intrinsic.Control.Else
+			f.Intrinsic.String.build("UPDATE VENDOR_ENCRYPT SET BANK_ACCT_ENC='{0}' WHERE VENDOR_ID='{1}'",v.Local.sEncrypt,v.Local.sVendor,v.Local.ssql)
+			f.ODBC.Connection!con.execute(v.Local.ssql)
+		f.Intrinsic.Control.EndIf
+		V.Local.sRet.Set("")
+	
+	f.Intrinsic.Control.Next(v.Local.i)
+	
+	f.ODBC.Connection!con.Close
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.UI.Msgbox("Upload Completed.")
+f.Intrinsic.Control.End
+Program.Sub.Main.End
+
+Program.Sub.Comments.Start
+${$5$}$3.0.0.0$}$1
+${$6$}$Ryan$}$20210305142428301$}$zT7b+sV1eISPUtInNavz/nuzcK/R1TVI9WuUrFgc4Mw02W9pPGSrUcMdyfWQ+l78Zj1UcNePn+A=
+Program.Sub.Comments.End
